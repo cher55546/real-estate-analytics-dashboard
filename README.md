@@ -75,7 +75,7 @@
 
 ## Запуск
 
-1. Откройте файл `real_estate_analytics_dashboard.html`.
+1. Откройте файл `[real_estate_analytics_dashboard.html](https://cher55546.github.io/real-estate-analytics-dashboard/)`.
 2. Используйте стандартный браузер: Chrome, Edge или Firefox.
 3. Выберите фильтры и временной период.
 4. Измените значения в таблице.
