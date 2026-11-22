@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Аналитика обращений</title>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+<style>
+:root {
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --ink: #263445;
+    --muted: #788493;
+    --line: #e7ebef;
+    --teal: #18a999;
+    --navy: #253b50;
+    --orange: #e69b52;
+    --shadow: 0 2px 10px rgba(25, 42, 62, .05);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.page {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 25px;
+    letter-spacing: -.3px;
+}
+
+.subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+.badge {
+    display: inline-block;
+    background: #e8f5f3;
+    color: #167c70;
+    border-radius: 20px;
+    padding: 7px 11px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.card, .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.filters {
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.control label {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    margin: 0 0 6px 2px;
+}
+
+select, input, button {
+    font: inherit;
+}
+
+select, input[type="date"] {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: white;
+    color: var(--ink);
+    padding: 9px 10px;
+    min-height: 38px;
+}
+
+select[multiple] {
+    height: 92px;
+    padding: 5px;
+}
+
+.help {
+    font-size: 10px;
+    color: var(--muted);
+    margin: 5px 2px 0;
+}
+
+.actions {
+    display: flex;
+    align-items: end;
+    gap: 8px;
+}
+
+button {
+    border: 0;
+    border-radius: 8px;
+    padding: 10px 13px;
+    min-height: 38px;
+    cursor: pointer;
+    background: var(--navy);
+    color: white;
+    font-weight: 600;
+}
+
+button.secondary {
+    background: #edf1f4;
+    color: var(--ink);
+}
+
+button:hover { opacity: .88; }
+
+.kpis {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.kpi {
+    padding: 16px;
+    min-height: 105px;
+}
+
+.kpi-label {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.kpi-value {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: 13px;
+    letter-spacing: -.4px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr 1fr;
+    gap: 12px;
+}
+
+.panel {
+    padding: 12px;
+    min-width: 0;
+}
+
+.panel.wide { grid-column: span 2; }
+
+.chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 3px 4px 0;
+}
+
+.chart-note {
+    font-size: 10px;
+    color: var(--muted);
+    margin: 4px;
+}
+
+.chart {
+    width: 100%;
+    height: 265px;
+}
+
+.table-panel {
+    margin-top: 14px;
+    padding: 16px;
+}
+
+.table-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.table-head h2 {
+    font-size: 16px;
+    margin: 0;
+}
+
+.table-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.table-wrap {
+    overflow: auto;
+    max-height: 460px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+table {
+    width: 100%;
+    min-width: 1050px;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #f7f9fa;
+    color: var(--muted);
+    text-align: left;
+    font-weight: 600;
+}
+
+th, td {
+    border-bottom: 1px solid var(--line);
+    padding: 8px;
+    white-space: nowrap;
+}
+
+td input {
+    width: 100%;
+    min-width: 85px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    padding: 6px;
+    background: transparent;
+}
+
+td input:focus {
+    outline: none;
+    border-color: #9dcac4;
+    background: white;
+}
+
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.footer {
+    color: var(--muted);
+    font-size: 11px;
+    padding: 14px 2px;
+}
+
+@media (max-width: 1000px) {
+    .kpis { grid-template-columns: repeat(3, 1fr); }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .panel.wide { grid-column: span 2; }
+}
+
+@media (max-width: 650px) {
+    .page { padding: 12px; }
+    .header { display: block; }
+    .badge { margin-top: 10px; }
+    .filters { grid-template-columns: 1fr 1fr; }
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .grid { grid-template-columns: 1fr; }
+    .panel.wide { grid-column: auto; }
+    .table-head { align-items: flex-start; flex-direction: column; }
+}
+</style>
+</head>
+
+<body>
+<div class="page">
+
+    <div class="header">
+        <div>
+            <h1>Аналитика обращений</h1>
+            <div class="subtitle">Показатели продаж и работы с обращениями</div>
+        </div>
+        <div class="badge">Учебный проект · синтетические данные</div>
+    </div>
+
+    <section class="card filters">
+        <div class="control">
+            <label for="projectFilter">Жилые комплексы — можно выбрать несколько</label>
+            <select id="projectFilter" multiple></select>
+            <div class="help">Ctrl / Command + клик для выбора нескольких значений</div>
+        </div>
+
+        <div class="control">
+            <label for="sourceFilter">Источники — можно выбрать несколько</label>
+            <select id="sourceFilter" multiple></select>
+            <div class="help">Если ничего не выбрано, учитываются все</div>
+        </div>
+
+        <div class="control">
+            <label for="managerFilter">Менеджеры — можно выбрать несколько</label>
+            <select id="managerFilter" multiple></select>
+            <div class="help">Можно выбрать одного или нескольких менеджеров</div>
+        </div>
+
+        <div class="control">
+            <label for="statusFilter">Статусы — можно выбрать несколько</label>
+            <select id="statusFilter" multiple></select>
+            <div class="help">Фильтры применяются ко всем графикам</div>
+        </div>
+
+        <div class="control">
+            <label for="dateFrom">Дата обращения: с</label>
+            <input id="dateFrom" type="date" value="2025-01-01">
+        </div>
+
+        <div class="control">
+            <label for="dateTo">Дата обращения: по</label>
+            <input id="dateTo" type="date" value="2025-12-31">
+        </div>
+
+        <div class="control">
+            <label for="metricFilter">Показатели динамики — можно выбрать несколько</label>
+            <select id="metricFilter" multiple>
+                <option value="leads" selected>Обращения</option>
+                <option value="deals" selected>Сделки</option>
+            </select>
+            <div class="help">Выбор влияет на график динамики</div>
+        </div>
+
+        <div class="actions">
+            <button class="secondary" onclick="resetFilters()">Сбросить фильтры</button>
+        </div>
+    </section>
+
+    <section id="kpis" class="kpis"></section>
+
+    <section class="grid">
+        <div class="panel wide">
+            <div class="chart-title">Динамика обращений и сделок</div>
+            <div class="chart-note">Показатели сгруппированы по месяцам</div>
+            <div id="trendChart" class="chart"></div>
+        </div>
+
+        <div class="panel">
+            <div class="chart-title">Обращения по источникам</div>
+            <div class="chart-note">Распределение выбранных обращений</div>
+            <div id="sourceChart" class="chart"></div>
+        </div>
+
+        <div class="panel">
+            <div class="chart-title">Статусы обращений</div>
+            <div class="chart-note">Количество записей в каждом статусе</div>
+            <div id="statusChart" class="chart"></div>
+        </div>
+
+        <div class="panel">
+            <div class="chart-title">Конверсия менеджеров</div>
+            <div class="chart-note">Сделки / обращения</div>
+            <div id="managerChart" class="chart"></div>
+        </div>
+
+        <div class="panel">
+            <div class="chart-title">Обращения по жилым комплексам</div>
+            <div class="chart-note">Количество обращений по проектам</div>
+            <div id="projectChart" class="chart"></div>
+        </div>
+    </section>
+
+    <section class="card table-panel">
+        <div class="table-head">
+            <div>
+                <h2>Редактирование данных</h2>
+                <div class="chart-note">
+                    Измените значения в таблице: графики обновятся после изменения ячейки.
+                </div>
+            </div>
+            <div class="table-actions">
+                <button class="secondary" onclick="addRow()">Добавить запись</button>
+                <button onclick="downloadCsv()">Скачать CSV</button>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Дата</th>
+                        <th>Источник</th>
+                        <th>ЖК</th>
+                        <th>Менеджер</th>
+                        <th>Статус</th>
+                        <th>Бюджет, ₽</th>
+                        <th>Сумма сделки, ₽</th>
+                        <th>Обновлено</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTable"></tbody>
+            </table>
+        </div>
+
+        <div class="pager">
+            <button class="secondary" onclick="changePage(-1)">Назад</button>
+            <span id="pageLabel"></span>
+            <button class="secondary" onclick="changePage(1)">Далее</button>
+        </div>
+    </section>
+
+    <div class="footer">
+        Изменения действуют в текущем браузере. Чтобы сохранить их отдельно, нажмите «Скачать CSV».
+    </div>
+</div>
+
+<script>
+const rows = [{"Lead_ID": "LD-00001", "Date": "2025-04-13T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-05-02T00:00:00.000"}, {"Lead_ID": "LD-00002", "Date": "2025-12-15T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-26T00:00:00.000"}, {"Lead_ID": "LD-00003", "Date": "2025-09-28T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-10-16T00:00:00.000"}, {"Lead_ID": "LD-00004", "Date": "2025-04-17T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-06T00:00:00.000"}, {"Lead_ID": "LD-00005", "Date": "2025-03-13T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-15T00:00:00.000"}, {"Lead_ID": "LD-00006", "Date": "2025-07-08T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-07-22T00:00:00.000"}, {"Lead_ID": "LD-00007", "Date": "2025-01-21T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-01-22T00:00:00.000"}, {"Lead_ID": "LD-00008", "Date": "2025-04-13T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-14T00:00:00.000"}, {"Lead_ID": "LD-00009", "Date": "2025-05-02T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-05-04T00:00:00.000"}, {"Lead_ID": "LD-00010", "Date": "2025-08-03T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 7500000, "Deal_amount": 5909245.0, "Last_update": "2025-08-08T00:00:00.000"}, {"Lead_ID": "LD-00011", "Date": "2025-11-27T00:00:00.000", "Project": "Северный парк", "Source": "Не указан", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-12-11T00:00:00.000"}, {"Lead_ID": "LD-00012", "Date": "2025-03-29T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-04-07T00:00:00.000"}, {"Lead_ID": "LD-00013", "Date": "2025-04-10T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-18T00:00:00.000"}, {"Lead_ID": "LD-00014", "Date": "2025-12-26T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-26T00:00:00.000"}, {"Lead_ID": "LD-00015", "Date": "2025-06-01T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-06-16T00:00:00.000"}, {"Lead_ID": "LD-00016", "Date": "2025-05-11T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-16T00:00:00.000"}, {"Lead_ID": "LD-00017", "Date": "2025-05-30T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-06-07T00:00:00.000"}, {"Lead_ID": "LD-00018", "Date": "2025-11-05T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-11-08T00:00:00.000"}, {"Lead_ID": "LD-00019", "Date": "2025-09-15T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-16T00:00:00.000"}, {"Lead_ID": "LD-00020", "Date": "2025-12-10T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-12-13T00:00:00.000"}, {"Lead_ID": "LD-00021", "Date": "2025-10-21T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-10-21T00:00:00.000"}, {"Lead_ID": "LD-00022", "Date": "2025-07-11T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-07-29T00:00:00.000"}, {"Lead_ID": "LD-00023", "Date": "2025-10-04T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-13T00:00:00.000"}, {"Lead_ID": "LD-00024", "Date": "2025-06-10T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-06-24T00:00:00.000"}, {"Lead_ID": "LD-00025", "Date": "2025-11-10T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-11-28T00:00:00.000"}, {"Lead_ID": "LD-00026", "Date": "2025-01-22T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-02-06T00:00:00.000"}, {"Lead_ID": "LD-00027", "Date": "2025-09-10T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-09-13T00:00:00.000"}, {"Lead_ID": "LD-00028", "Date": "2025-08-24T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 13570556.0, "Last_update": "2025-08-25T00:00:00.000"}, {"Lead_ID": "LD-00029", "Date": "2025-12-11T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-23T00:00:00.000"}, {"Lead_ID": "LD-00030", "Date": "2025-02-18T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-02-18T00:00:00.000"}, {"Lead_ID": "LD-00031", "Date": "2025-02-28T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-16T00:00:00.000"}, {"Lead_ID": "LD-00032", "Date": "2025-06-19T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-07-01T00:00:00.000"}, {"Lead_ID": "LD-00033", "Date": "2025-07-07T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-10T00:00:00.000"}, {"Lead_ID": "LD-00034", "Date": "2025-09-28T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-10-04T00:00:00.000"}, {"Lead_ID": "LD-00035", "Date": "2025-07-09T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-25T00:00:00.000"}, {"Lead_ID": "LD-00036", "Date": "2025-06-24T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-07-02T00:00:00.000"}, {"Lead_ID": "LD-00037", "Date": "2025-02-20T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-02-23T00:00:00.000"}, {"Lead_ID": "LD-00038", "Date": "2025-12-30T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00039", "Date": "2025-02-24T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-24T00:00:00.000"}, {"Lead_ID": "LD-00040", "Date": "2025-09-01T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-10T00:00:00.000"}, {"Lead_ID": "LD-00041", "Date": "2025-11-16T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-11-19T00:00:00.000"}, {"Lead_ID": "LD-00042", "Date": "2025-05-11T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-05-19T00:00:00.000"}, {"Lead_ID": "LD-00043", "Date": "2025-11-03T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-11-15T00:00:00.000"}, {"Lead_ID": "LD-00044", "Date": "2025-05-15T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-05-28T00:00:00.000"}, {"Lead_ID": "LD-00045", "Date": "2025-01-21T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-01-30T00:00:00.000"}, {"Lead_ID": "LD-00046", "Date": "2025-11-25T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 6478768.0, "Last_update": "2025-11-30T00:00:00.000"}, {"Lead_ID": "LD-00047", "Date": "2025-06-16T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-07-01T00:00:00.000"}, {"Lead_ID": "LD-00048", "Date": "2025-10-01T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-06T00:00:00.000"}, {"Lead_ID": "LD-00049", "Date": "2025-03-30T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-04-15T00:00:00.000"}, {"Lead_ID": "LD-00050", "Date": "2025-11-12T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-11-21T00:00:00.000"}, {"Lead_ID": "LD-00051", "Date": "2025-01-14T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-01-31T00:00:00.000"}, {"Lead_ID": "LD-00052", "Date": "2025-08-30T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 6000000, "Deal_amount": 11932667.0, "Last_update": "2025-09-16T00:00:00.000"}, {"Lead_ID": "LD-00053", "Date": "2025-09-22T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-09-24T00:00:00.000"}, {"Lead_ID": "LD-00054", "Date": "2025-12-12T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00055", "Date": "2025-02-22T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-08T00:00:00.000"}, {"Lead_ID": "LD-00056", "Date": "2025-12-06T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-12-20T00:00:00.000"}, {"Lead_ID": "LD-00057", "Date": "2025-04-02T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-05T00:00:00.000"}, {"Lead_ID": "LD-00058", "Date": "2025-09-21T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 7846230.0, "Last_update": "2025-09-29T00:00:00.000"}, {"Lead_ID": "LD-00059", "Date": "2025-02-04T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-22T00:00:00.000"}, {"Lead_ID": "LD-00060", "Date": "2025-07-25T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-08-10T00:00:00.000"}, {"Lead_ID": "LD-00061", "Date": "2025-03-22T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-04-01T00:00:00.000"}, {"Lead_ID": "LD-00062", "Date": "2025-02-19T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 9556766.0, "Last_update": "2025-02-27T00:00:00.000"}, {"Lead_ID": "LD-00063", "Date": "2025-12-26T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00064", "Date": "2025-01-02T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 6000000, "Deal_amount": 10000546.0, "Last_update": "2025-01-19T00:00:00.000"}, {"Lead_ID": "LD-00065", "Date": "2025-02-23T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-14T00:00:00.000"}, {"Lead_ID": "LD-00066", "Date": "2025-04-16T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-28T00:00:00.000"}, {"Lead_ID": "LD-00067", "Date": "2025-09-17T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-24T00:00:00.000"}, {"Lead_ID": "LD-00068", "Date": "2025-11-06T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-11-12T00:00:00.000"}, {"Lead_ID": "LD-00069", "Date": "2025-07-10T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-07-26T00:00:00.000"}, {"Lead_ID": "LD-00070", "Date": "2025-08-06T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-08-20T00:00:00.000"}, {"Lead_ID": "LD-00071", "Date": "2025-02-13T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-03-04T00:00:00.000"}, {"Lead_ID": "LD-00072", "Date": "2025-06-11T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-25T00:00:00.000"}, {"Lead_ID": "LD-00073", "Date": "2025-07-21T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 5237199.0, "Last_update": "2025-07-21T00:00:00.000"}, {"Lead_ID": "LD-00074", "Date": "2025-09-27T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-10T00:00:00.000"}, {"Lead_ID": "LD-00075", "Date": "2025-12-17T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-12-21T00:00:00.000"}, {"Lead_ID": "LD-00076", "Date": "2025-10-31T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-11-10T00:00:00.000"}, {"Lead_ID": "LD-00077", "Date": "2025-09-28T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-13T00:00:00.000"}, {"Lead_ID": "LD-00078", "Date": "2025-08-03T00:00:00.000", "Project": "Северный парк", "Source": "Не указан", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-08-04T00:00:00.000"}, {"Lead_ID": "LD-00079", "Date": "2025-09-09T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-16T00:00:00.000"}, {"Lead_ID": "LD-00080", "Date": "2025-07-09T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-07-19T00:00:00.000"}, {"Lead_ID": "LD-00081", "Date": "2025-10-23T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-11-09T00:00:00.000"}, {"Lead_ID": "LD-00082", "Date": "2025-08-01T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-08-03T00:00:00.000"}, {"Lead_ID": "LD-00083", "Date": "2025-07-27T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-27T00:00:00.000"}, {"Lead_ID": "LD-00084", "Date": "2025-08-25T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-04T00:00:00.000"}, {"Lead_ID": "LD-00085", "Date": "2025-12-04T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-19T00:00:00.000"}, {"Lead_ID": "LD-00086", "Date": "2025-02-22T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-11T00:00:00.000"}, {"Lead_ID": "LD-00087", "Date": "2025-10-07T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-22T00:00:00.000"}, {"Lead_ID": "LD-00088", "Date": "2025-08-05T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-08-14T00:00:00.000"}, {"Lead_ID": "LD-00089", "Date": "2025-09-09T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-09-26T00:00:00.000"}, {"Lead_ID": "LD-00090", "Date": "2025-07-07T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-07-12T00:00:00.000"}, {"Lead_ID": "LD-00091", "Date": "2025-02-10T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-02-28T00:00:00.000"}, {"Lead_ID": "LD-00092", "Date": "2025-06-06T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-06-09T00:00:00.000"}, {"Lead_ID": "LD-00093", "Date": "2025-01-15T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-01-27T00:00:00.000"}, {"Lead_ID": "LD-00094", "Date": "2025-10-28T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-11-10T00:00:00.000"}, {"Lead_ID": "LD-00095", "Date": "2025-03-06T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-03-08T00:00:00.000"}, {"Lead_ID": "LD-00096", "Date": "2025-12-11T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-12-20T00:00:00.000"}, {"Lead_ID": "LD-00097", "Date": "2025-11-23T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-11-28T00:00:00.000"}, {"Lead_ID": "LD-00098", "Date": "2025-01-09T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-01-09T00:00:00.000"}, {"Lead_ID": "LD-00099", "Date": "2025-12-10T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-23T00:00:00.000"}, {"Lead_ID": "LD-00100", "Date": "2025-05-09T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-05-16T00:00:00.000"}, {"Lead_ID": "LD-00101", "Date": "2025-05-16T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-03T00:00:00.000"}, {"Lead_ID": "LD-00102", "Date": "2025-03-04T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-03-17T00:00:00.000"}, {"Lead_ID": "LD-00103", "Date": "2025-05-19T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-05-28T00:00:00.000"}, {"Lead_ID": "LD-00104", "Date": "2025-03-22T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-07T00:00:00.000"}, {"Lead_ID": "LD-00105", "Date": "2025-06-12T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-20T00:00:00.000"}, {"Lead_ID": "LD-00106", "Date": "2025-10-16T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-21T00:00:00.000"}, {"Lead_ID": "LD-00107", "Date": "2025-09-18T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 13657768.0, "Last_update": "2025-09-28T00:00:00.000"}, {"Lead_ID": "LD-00108", "Date": "2025-08-19T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-08-25T00:00:00.000"}, {"Lead_ID": "LD-00109", "Date": "2025-02-10T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-02-26T00:00:00.000"}, {"Lead_ID": "LD-00110", "Date": "2025-01-28T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-01-28T00:00:00.000"}, {"Lead_ID": "LD-00111", "Date": "2025-05-15T00:00:00.000", "Project": "Речной квартал", "Source": "Не указан", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-05-19T00:00:00.000"}, {"Lead_ID": "LD-00112", "Date": "2025-07-20T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-07-28T00:00:00.000"}, {"Lead_ID": "LD-00113", "Date": "2025-11-24T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-11T00:00:00.000"}, {"Lead_ID": "LD-00114", "Date": "2025-09-25T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-09-26T00:00:00.000"}, {"Lead_ID": "LD-00115", "Date": "2025-02-02T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-12T00:00:00.000"}, {"Lead_ID": "LD-00116", "Date": "2025-02-17T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-22T00:00:00.000"}, {"Lead_ID": "LD-00117", "Date": "2025-03-03T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-03-10T00:00:00.000"}, {"Lead_ID": "LD-00118", "Date": "2025-08-04T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-08-07T00:00:00.000"}, {"Lead_ID": "LD-00119", "Date": "2025-10-20T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-11-06T00:00:00.000"}, {"Lead_ID": "LD-00120", "Date": "2025-04-09T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-04-19T00:00:00.000"}, {"Lead_ID": "LD-00121", "Date": "2025-06-21T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-06-25T00:00:00.000"}, {"Lead_ID": "LD-00122", "Date": "2025-12-26T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00123", "Date": "2025-08-02T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-08-19T00:00:00.000"}, {"Lead_ID": "LD-00124", "Date": "2025-02-04T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-02-05T00:00:00.000"}, {"Lead_ID": "LD-00125", "Date": "2025-08-15T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-08-25T00:00:00.000"}, {"Lead_ID": "LD-00126", "Date": "2025-04-11T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-23T00:00:00.000"}, {"Lead_ID": "LD-00127", "Date": "2025-05-11T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-05-14T00:00:00.000"}, {"Lead_ID": "LD-00128", "Date": "2025-09-14T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-09-20T00:00:00.000"}, {"Lead_ID": "LD-00129", "Date": "2025-01-05T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-01-15T00:00:00.000"}, {"Lead_ID": "LD-00130", "Date": "2025-08-06T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-08-09T00:00:00.000"}, {"Lead_ID": "LD-00131", "Date": "2025-09-12T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-26T00:00:00.000"}, {"Lead_ID": "LD-00132", "Date": "2025-12-25T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-25T00:00:00.000"}, {"Lead_ID": "LD-00133", "Date": "2025-10-10T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 11985945.0, "Last_update": "2025-10-12T00:00:00.000"}, {"Lead_ID": "LD-00134", "Date": "2025-07-26T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-08-08T00:00:00.000"}, {"Lead_ID": "LD-00135", "Date": "2025-01-15T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-01-20T00:00:00.000"}, {"Lead_ID": "LD-00136", "Date": "2025-12-12T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-29T00:00:00.000"}, {"Lead_ID": "LD-00137", "Date": "2025-02-11T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-02-11T00:00:00.000"}, {"Lead_ID": "LD-00138", "Date": "2025-06-28T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-07-03T00:00:00.000"}, {"Lead_ID": "LD-00139", "Date": "2025-03-04T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-03-09T00:00:00.000"}, {"Lead_ID": "LD-00140", "Date": "2025-12-18T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00141", "Date": "2025-08-19T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 13500000, "Deal_amount": 7195690.0, "Last_update": "2025-08-23T00:00:00.000"}, {"Lead_ID": "LD-00142", "Date": "2025-08-29T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-09-14T00:00:00.000"}, {"Lead_ID": "LD-00143", "Date": "2025-02-21T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-03-02T00:00:00.000"}, {"Lead_ID": "LD-00144", "Date": "2025-04-06T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-23T00:00:00.000"}, {"Lead_ID": "LD-00145", "Date": "2025-08-10T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-08-16T00:00:00.000"}, {"Lead_ID": "LD-00146", "Date": "2025-08-19T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-08-21T00:00:00.000"}, {"Lead_ID": "LD-00147", "Date": "2025-08-25T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 13500000, "Deal_amount": 10056093.0, "Last_update": "2025-09-06T00:00:00.000"}, {"Lead_ID": "LD-00148", "Date": "2025-05-23T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 13500000, "Deal_amount": 7464722.0, "Last_update": "2025-06-06T00:00:00.000"}, {"Lead_ID": "LD-00149", "Date": "2025-06-20T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-07-09T00:00:00.000"}, {"Lead_ID": "LD-00150", "Date": "2025-01-29T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-16T00:00:00.000"}, {"Lead_ID": "LD-00151", "Date": "2025-02-05T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-02-07T00:00:00.000"}, {"Lead_ID": "LD-00152", "Date": "2025-01-13T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-01-16T00:00:00.000"}, {"Lead_ID": "LD-00153", "Date": "2025-06-09T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-13T00:00:00.000"}, {"Lead_ID": "LD-00154", "Date": "2025-11-23T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-11-23T00:00:00.000"}, {"Lead_ID": "LD-00155", "Date": "2025-07-06T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-07-09T00:00:00.000"}, {"Lead_ID": "LD-00156", "Date": "2025-08-31T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-09-11T00:00:00.000"}, {"Lead_ID": "LD-00157", "Date": "2025-03-27T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-05T00:00:00.000"}, {"Lead_ID": "LD-00158", "Date": "2025-10-11T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-10-30T00:00:00.000"}, {"Lead_ID": "LD-00159", "Date": "2025-03-07T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-03-19T00:00:00.000"}, {"Lead_ID": "LD-00160", "Date": "2025-06-19T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-07-02T00:00:00.000"}, {"Lead_ID": "LD-00161", "Date": "2025-02-14T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-02-18T00:00:00.000"}, {"Lead_ID": "LD-00162", "Date": "2025-03-03T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-03-06T00:00:00.000"}, {"Lead_ID": "LD-00163", "Date": "2025-05-14T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-05-27T00:00:00.000"}, {"Lead_ID": "LD-00164", "Date": "2025-10-11T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-20T00:00:00.000"}, {"Lead_ID": "LD-00165", "Date": "2025-01-28T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 9537871.0, "Last_update": "2025-02-13T00:00:00.000"}, {"Lead_ID": "LD-00166", "Date": "2025-04-18T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-27T00:00:00.000"}, {"Lead_ID": "LD-00167", "Date": "2025-02-13T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-02-19T00:00:00.000"}, {"Lead_ID": "LD-00168", "Date": "2025-12-06T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-12-21T00:00:00.000"}, {"Lead_ID": "LD-00169", "Date": "2025-10-13T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 7500000, "Deal_amount": 10370807.0, "Last_update": "2025-10-13T00:00:00.000"}, {"Lead_ID": "LD-00170", "Date": "2025-11-27T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-13T00:00:00.000"}, {"Lead_ID": "LD-00171", "Date": "2025-05-08T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 7500000, "Deal_amount": 13727148.0, "Last_update": "2025-05-16T00:00:00.000"}, {"Lead_ID": "LD-00172", "Date": "2025-12-14T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 5501590.0, "Last_update": "2025-12-19T00:00:00.000"}, {"Lead_ID": "LD-00173", "Date": "2025-08-19T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 8360492.0, "Last_update": "2025-09-06T00:00:00.000"}, {"Lead_ID": "LD-00174", "Date": "2025-07-09T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 5872328.0, "Last_update": "2025-07-21T00:00:00.000"}, {"Lead_ID": "LD-00175", "Date": "2025-08-13T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-08-15T00:00:00.000"}, {"Lead_ID": "LD-00176", "Date": "2025-10-10T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-16T00:00:00.000"}, {"Lead_ID": "LD-00177", "Date": "2025-05-01T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-05-09T00:00:00.000"}, {"Lead_ID": "LD-00178", "Date": "2025-04-26T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-30T00:00:00.000"}, {"Lead_ID": "LD-00179", "Date": "2025-08-21T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-08-30T00:00:00.000"}, {"Lead_ID": "LD-00180", "Date": "2025-09-16T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-02T00:00:00.000"}, {"Lead_ID": "LD-00181", "Date": "2025-12-25T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00182", "Date": "2025-07-17T00:00:00.000", "Project": "Городские сады", "Source": "Не указан", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-08-01T00:00:00.000"}, {"Lead_ID": "LD-00183", "Date": "2025-05-17T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 5164074.0, "Last_update": "2025-05-19T00:00:00.000"}, {"Lead_ID": "LD-00184", "Date": "2025-11-14T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-11-22T00:00:00.000"}, {"Lead_ID": "LD-00185", "Date": "2025-06-14T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 13500000, "Deal_amount": 8287093.0, "Last_update": "2025-06-28T00:00:00.000"}, {"Lead_ID": "LD-00186", "Date": "2025-08-13T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-08-17T00:00:00.000"}, {"Lead_ID": "LD-00187", "Date": "2025-11-03T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-11-15T00:00:00.000"}, {"Lead_ID": "LD-00188", "Date": "2025-08-22T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-04T00:00:00.000"}, {"Lead_ID": "LD-00189", "Date": "2025-06-21T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-07-10T00:00:00.000"}, {"Lead_ID": "LD-00190", "Date": "2025-06-01T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-06-15T00:00:00.000"}, {"Lead_ID": "LD-00191", "Date": "2025-11-11T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-11-26T00:00:00.000"}, {"Lead_ID": "LD-00192", "Date": "2025-06-09T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-06-21T00:00:00.000"}, {"Lead_ID": "LD-00193", "Date": "2025-04-06T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-04-22T00:00:00.000"}, {"Lead_ID": "LD-00194", "Date": "2025-08-21T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-08-28T00:00:00.000"}, {"Lead_ID": "LD-00195", "Date": "2025-06-29T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-06-30T00:00:00.000"}, {"Lead_ID": "LD-00196", "Date": "2025-04-23T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-27T00:00:00.000"}, {"Lead_ID": "LD-00197", "Date": "2025-11-14T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-11-19T00:00:00.000"}, {"Lead_ID": "LD-00198", "Date": "2025-02-21T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-03-04T00:00:00.000"}, {"Lead_ID": "LD-00199", "Date": "2025-09-25T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-12T00:00:00.000"}, {"Lead_ID": "LD-00200", "Date": "2025-10-22T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-10-22T00:00:00.000"}, {"Lead_ID": "LD-00201", "Date": "2025-04-23T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-05-09T00:00:00.000"}, {"Lead_ID": "LD-00202", "Date": "2025-04-11T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-04-21T00:00:00.000"}, {"Lead_ID": "LD-00203", "Date": "2025-04-23T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-05-02T00:00:00.000"}, {"Lead_ID": "LD-00204", "Date": "2025-03-22T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-04-09T00:00:00.000"}, {"Lead_ID": "LD-00205", "Date": "2025-07-06T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-07-19T00:00:00.000"}, {"Lead_ID": "LD-00206", "Date": "2025-04-23T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-02T00:00:00.000"}, {"Lead_ID": "LD-00207", "Date": "2025-01-02T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-01-16T00:00:00.000"}, {"Lead_ID": "LD-00208", "Date": "2025-05-10T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-05-28T00:00:00.000"}, {"Lead_ID": "LD-00209", "Date": "2025-08-08T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-08-11T00:00:00.000"}, {"Lead_ID": "LD-00210", "Date": "2025-02-23T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-02-24T00:00:00.000"}, {"Lead_ID": "LD-00211", "Date": "2025-12-09T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-17T00:00:00.000"}, {"Lead_ID": "LD-00212", "Date": "2025-08-12T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 13500000, "Deal_amount": 13811940.0, "Last_update": "2025-08-21T00:00:00.000"}, {"Lead_ID": "LD-00213", "Date": "2025-08-13T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-08-23T00:00:00.000"}, {"Lead_ID": "LD-00214", "Date": "2025-05-06T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-05-19T00:00:00.000"}, {"Lead_ID": "LD-00215", "Date": "2025-05-10T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-05-16T00:00:00.000"}, {"Lead_ID": "LD-00216", "Date": "2025-02-22T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-03-08T00:00:00.000"}, {"Lead_ID": "LD-00217", "Date": "2025-06-21T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-07-09T00:00:00.000"}, {"Lead_ID": "LD-00218", "Date": "2025-08-06T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-08-20T00:00:00.000"}, {"Lead_ID": "LD-00219", "Date": "2025-06-09T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-16T00:00:00.000"}, {"Lead_ID": "LD-00220", "Date": "2025-07-17T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-07-27T00:00:00.000"}, {"Lead_ID": "LD-00221", "Date": "2025-09-04T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-09-12T00:00:00.000"}, {"Lead_ID": "LD-00222", "Date": "2025-11-20T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-04T00:00:00.000"}, {"Lead_ID": "LD-00223", "Date": "2025-07-22T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-22T00:00:00.000"}, {"Lead_ID": "LD-00224", "Date": "2025-07-03T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-03T00:00:00.000"}, {"Lead_ID": "LD-00225", "Date": "2025-05-03T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-05-21T00:00:00.000"}, {"Lead_ID": "LD-00226", "Date": "2025-09-12T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-14T00:00:00.000"}, {"Lead_ID": "LD-00227", "Date": "2025-10-21T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-10-30T00:00:00.000"}, {"Lead_ID": "LD-00228", "Date": "2025-10-07T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 7500000, "Deal_amount": 11606470.0, "Last_update": "2025-10-14T00:00:00.000"}, {"Lead_ID": "LD-00229", "Date": "2025-11-21T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-05T00:00:00.000"}, {"Lead_ID": "LD-00230", "Date": "2025-04-08T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-04-17T00:00:00.000"}, {"Lead_ID": "LD-00231", "Date": "2025-07-17T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-17T00:00:00.000"}, {"Lead_ID": "LD-00232", "Date": "2025-08-28T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-09-14T00:00:00.000"}, {"Lead_ID": "LD-00233", "Date": "2025-05-24T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-05-25T00:00:00.000"}, {"Lead_ID": "LD-00234", "Date": "2025-04-07T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-25T00:00:00.000"}, {"Lead_ID": "LD-00235", "Date": "2025-07-20T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-08-01T00:00:00.000"}, {"Lead_ID": "LD-00236", "Date": "2025-05-04T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-04T00:00:00.000"}, {"Lead_ID": "LD-00237", "Date": "2025-07-06T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-07-07T00:00:00.000"}, {"Lead_ID": "LD-00238", "Date": "2025-11-22T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-07T00:00:00.000"}, {"Lead_ID": "LD-00239", "Date": "2025-12-15T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-29T00:00:00.000"}, {"Lead_ID": "LD-00240", "Date": "2025-09-16T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 12184872.0, "Last_update": "2025-09-28T00:00:00.000"}, {"Lead_ID": "LD-00241", "Date": "2025-05-28T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-06-12T00:00:00.000"}, {"Lead_ID": "LD-00242", "Date": "2025-09-09T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-25T00:00:00.000"}, {"Lead_ID": "LD-00243", "Date": "2025-12-12T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-18T00:00:00.000"}, {"Lead_ID": "LD-00244", "Date": "2025-05-27T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-12T00:00:00.000"}, {"Lead_ID": "LD-00245", "Date": "2025-05-28T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-06-03T00:00:00.000"}, {"Lead_ID": "LD-00246", "Date": "2025-12-18T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-30T00:00:00.000"}, {"Lead_ID": "LD-00247", "Date": "2025-07-18T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-07-22T00:00:00.000"}, {"Lead_ID": "LD-00248", "Date": "2025-11-04T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-11-20T00:00:00.000"}, {"Lead_ID": "LD-00249", "Date": "2025-05-08T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-10T00:00:00.000"}, {"Lead_ID": "LD-00250", "Date": "2025-02-08T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-02-14T00:00:00.000"}, {"Lead_ID": "LD-00251", "Date": "2025-12-04T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-20T00:00:00.000"}, {"Lead_ID": "LD-00252", "Date": "2025-12-26T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00253", "Date": "2025-05-09T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-05-09T00:00:00.000"}, {"Lead_ID": "LD-00254", "Date": "2025-09-24T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-10T00:00:00.000"}, {"Lead_ID": "LD-00255", "Date": "2025-05-31T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 12863438.0, "Last_update": "2025-06-16T00:00:00.000"}, {"Lead_ID": "LD-00256", "Date": "2025-10-25T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-11-04T00:00:00.000"}, {"Lead_ID": "LD-00257", "Date": "2025-04-09T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-11T00:00:00.000"}, {"Lead_ID": "LD-00258", "Date": "2025-09-20T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-10-04T00:00:00.000"}, {"Lead_ID": "LD-00259", "Date": "2025-09-09T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-19T00:00:00.000"}, {"Lead_ID": "LD-00260", "Date": "2025-05-24T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-08T00:00:00.000"}, {"Lead_ID": "LD-00261", "Date": "2025-12-12T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 10668889.0, "Last_update": "2025-12-20T00:00:00.000"}, {"Lead_ID": "LD-00262", "Date": "2025-04-22T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-04-22T00:00:00.000"}, {"Lead_ID": "LD-00263", "Date": "2025-03-01T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-16T00:00:00.000"}, {"Lead_ID": "LD-00264", "Date": "2025-01-02T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-01-10T00:00:00.000"}, {"Lead_ID": "LD-00265", "Date": "2025-10-31T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-11-18T00:00:00.000"}, {"Lead_ID": "LD-00266", "Date": "2025-09-11T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-09-22T00:00:00.000"}, {"Lead_ID": "LD-00267", "Date": "2025-05-20T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-06-07T00:00:00.000"}, {"Lead_ID": "LD-00268", "Date": "2025-02-06T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-14T00:00:00.000"}, {"Lead_ID": "LD-00269", "Date": "2025-06-09T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-06-15T00:00:00.000"}, {"Lead_ID": "LD-00270", "Date": "2025-01-09T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-01-22T00:00:00.000"}, {"Lead_ID": "LD-00271", "Date": "2025-08-21T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 7500000, "Deal_amount": 11024293.0, "Last_update": "2025-09-08T00:00:00.000"}, {"Lead_ID": "LD-00272", "Date": "2025-04-09T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-04-27T00:00:00.000"}, {"Lead_ID": "LD-00273", "Date": "2025-05-27T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-05-28T00:00:00.000"}, {"Lead_ID": "LD-00274", "Date": "2025-10-31T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 13500000, "Deal_amount": 13741022.0, "Last_update": "2025-11-08T00:00:00.000"}, {"Lead_ID": "LD-00275", "Date": "2025-07-27T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-08-08T00:00:00.000"}, {"Lead_ID": "LD-00276", "Date": "2025-05-11T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-05-25T00:00:00.000"}, {"Lead_ID": "LD-00277", "Date": "2025-06-01T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-06-03T00:00:00.000"}, {"Lead_ID": "LD-00278", "Date": "2025-02-23T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-03-05T00:00:00.000"}, {"Lead_ID": "LD-00279", "Date": "2025-04-30T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 13656691.0, "Last_update": "2025-05-13T00:00:00.000"}, {"Lead_ID": "LD-00280", "Date": "2025-06-10T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-06-17T00:00:00.000"}, {"Lead_ID": "LD-00281", "Date": "2025-04-26T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-13T00:00:00.000"}, {"Lead_ID": "LD-00282", "Date": "2025-03-16T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-04-03T00:00:00.000"}, {"Lead_ID": "LD-00283", "Date": "2025-04-23T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-05-08T00:00:00.000"}, {"Lead_ID": "LD-00284", "Date": "2025-04-14T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-15T00:00:00.000"}, {"Lead_ID": "LD-00285", "Date": "2025-12-06T00:00:00.000", "Project": "Речной квартал", "Source": "Не указан", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-12-13T00:00:00.000"}, {"Lead_ID": "LD-00286", "Date": "2025-09-11T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-16T00:00:00.000"}, {"Lead_ID": "LD-00287", "Date": "2025-08-15T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-08-26T00:00:00.000"}, {"Lead_ID": "LD-00288", "Date": "2025-04-22T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-05-06T00:00:00.000"}, {"Lead_ID": "LD-00289", "Date": "2025-04-09T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-04-16T00:00:00.000"}, {"Lead_ID": "LD-00290", "Date": "2025-06-02T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-06-05T00:00:00.000"}, {"Lead_ID": "LD-00291", "Date": "2025-12-15T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-12-29T00:00:00.000"}, {"Lead_ID": "LD-00292", "Date": "2025-12-04T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-23T00:00:00.000"}, {"Lead_ID": "LD-00293", "Date": "2025-07-13T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-07-29T00:00:00.000"}, {"Lead_ID": "LD-00294", "Date": "2025-11-06T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-11-18T00:00:00.000"}, {"Lead_ID": "LD-00295", "Date": "2025-06-12T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-29T00:00:00.000"}, {"Lead_ID": "LD-00296", "Date": "2025-07-27T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-28T00:00:00.000"}, {"Lead_ID": "LD-00297", "Date": "2025-06-18T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-30T00:00:00.000"}, {"Lead_ID": "LD-00298", "Date": "2025-06-10T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-06-22T00:00:00.000"}, {"Lead_ID": "LD-00299", "Date": "2025-03-09T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-03-23T00:00:00.000"}, {"Lead_ID": "LD-00300", "Date": "2025-10-16T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-11-04T00:00:00.000"}, {"Lead_ID": "LD-00301", "Date": "2025-10-04T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-13T00:00:00.000"}, {"Lead_ID": "LD-00302", "Date": "2025-10-31T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-11-02T00:00:00.000"}, {"Lead_ID": "LD-00303", "Date": "2025-05-15T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-06-02T00:00:00.000"}, {"Lead_ID": "LD-00304", "Date": "2025-07-14T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-07-16T00:00:00.000"}, {"Lead_ID": "LD-00305", "Date": "2025-05-08T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-05-21T00:00:00.000"}, {"Lead_ID": "LD-00306", "Date": "2025-02-02T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-02-09T00:00:00.000"}, {"Lead_ID": "LD-00307", "Date": "2025-06-25T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-28T00:00:00.000"}, {"Lead_ID": "LD-00308", "Date": "2025-01-22T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-10T00:00:00.000"}, {"Lead_ID": "LD-00309", "Date": "2025-08-26T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-09-05T00:00:00.000"}, {"Lead_ID": "LD-00310", "Date": "2025-06-07T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-06-17T00:00:00.000"}, {"Lead_ID": "LD-00311", "Date": "2025-02-07T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-02-17T00:00:00.000"}, {"Lead_ID": "LD-00312", "Date": "2025-08-18T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-08-19T00:00:00.000"}, {"Lead_ID": "LD-00313", "Date": "2025-12-31T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00314", "Date": "2025-02-20T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-02-28T00:00:00.000"}, {"Lead_ID": "LD-00315", "Date": "2025-09-21T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-09-22T00:00:00.000"}, {"Lead_ID": "LD-00316", "Date": "2025-10-10T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-10-24T00:00:00.000"}, {"Lead_ID": "LD-00317", "Date": "2025-01-27T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-02-11T00:00:00.000"}, {"Lead_ID": "LD-00318", "Date": "2025-08-14T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-08-17T00:00:00.000"}, {"Lead_ID": "LD-00319", "Date": "2025-10-04T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-11T00:00:00.000"}, {"Lead_ID": "LD-00320", "Date": "2025-10-13T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-21T00:00:00.000"}, {"Lead_ID": "LD-00321", "Date": "2025-04-07T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-11T00:00:00.000"}, {"Lead_ID": "LD-00322", "Date": "2025-10-11T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-26T00:00:00.000"}, {"Lead_ID": "LD-00323", "Date": "2025-11-13T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-11-25T00:00:00.000"}, {"Lead_ID": "LD-00324", "Date": "2025-10-31T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-11-06T00:00:00.000"}, {"Lead_ID": "LD-00325", "Date": "2025-05-27T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-06-15T00:00:00.000"}, {"Lead_ID": "LD-00326", "Date": "2025-01-04T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-01-20T00:00:00.000"}, {"Lead_ID": "LD-00327", "Date": "2025-02-04T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-02-06T00:00:00.000"}, {"Lead_ID": "LD-00328", "Date": "2025-07-11T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 10265481.0, "Last_update": "2025-07-15T00:00:00.000"}, {"Lead_ID": "LD-00329", "Date": "2025-02-18T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-03-08T00:00:00.000"}, {"Lead_ID": "LD-00330", "Date": "2025-01-17T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-01-28T00:00:00.000"}, {"Lead_ID": "LD-00331", "Date": "2025-06-21T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-06-27T00:00:00.000"}, {"Lead_ID": "LD-00332", "Date": "2025-08-08T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-08-16T00:00:00.000"}, {"Lead_ID": "LD-00333", "Date": "2025-06-07T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-12T00:00:00.000"}, {"Lead_ID": "LD-00334", "Date": "2025-02-15T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 11662314.0, "Last_update": "2025-03-03T00:00:00.000"}, {"Lead_ID": "LD-00335", "Date": "2025-01-06T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-01-21T00:00:00.000"}, {"Lead_ID": "LD-00336", "Date": "2025-04-09T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-11T00:00:00.000"}, {"Lead_ID": "LD-00337", "Date": "2025-08-21T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-08-24T00:00:00.000"}, {"Lead_ID": "LD-00338", "Date": "2025-02-06T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-15T00:00:00.000"}, {"Lead_ID": "LD-00339", "Date": "2025-10-07T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-10-11T00:00:00.000"}, {"Lead_ID": "LD-00340", "Date": "2025-12-15T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-24T00:00:00.000"}, {"Lead_ID": "LD-00341", "Date": "2025-10-29T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-11-09T00:00:00.000"}, {"Lead_ID": "LD-00342", "Date": "2025-06-30T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-09T00:00:00.000"}, {"Lead_ID": "LD-00343", "Date": "2025-04-05T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-17T00:00:00.000"}, {"Lead_ID": "LD-00344", "Date": "2025-04-09T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-04-19T00:00:00.000"}, {"Lead_ID": "LD-00345", "Date": "2025-07-07T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-22T00:00:00.000"}, {"Lead_ID": "LD-00346", "Date": "2025-04-26T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-05-03T00:00:00.000"}, {"Lead_ID": "LD-00347", "Date": "2025-07-10T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-17T00:00:00.000"}, {"Lead_ID": "LD-00348", "Date": "2025-09-10T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-09-17T00:00:00.000"}, {"Lead_ID": "LD-00349", "Date": "2025-06-10T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-22T00:00:00.000"}, {"Lead_ID": "LD-00350", "Date": "2025-09-13T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-09-14T00:00:00.000"}, {"Lead_ID": "LD-00351", "Date": "2025-11-19T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 9641094.0, "Last_update": "2025-11-30T00:00:00.000"}, {"Lead_ID": "LD-00352", "Date": "2025-05-08T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 7707184.0, "Last_update": "2025-05-17T00:00:00.000"}, {"Lead_ID": "LD-00353", "Date": "2025-01-18T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 7500000, "Deal_amount": 12873491.0, "Last_update": "2025-01-29T00:00:00.000"}, {"Lead_ID": "LD-00354", "Date": "2025-10-08T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-18T00:00:00.000"}, {"Lead_ID": "LD-00355", "Date": "2025-08-11T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-08-25T00:00:00.000"}, {"Lead_ID": "LD-00356", "Date": "2025-02-23T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-03-10T00:00:00.000"}, {"Lead_ID": "LD-00357", "Date": "2025-02-27T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-03-15T00:00:00.000"}, {"Lead_ID": "LD-00358", "Date": "2025-11-19T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 12343728.0, "Last_update": "2025-11-20T00:00:00.000"}, {"Lead_ID": "LD-00359", "Date": "2025-12-26T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00360", "Date": "2025-06-23T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-07-04T00:00:00.000"}, {"Lead_ID": "LD-00361", "Date": "2025-10-07T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-10-25T00:00:00.000"}, {"Lead_ID": "LD-00362", "Date": "2025-04-24T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-11T00:00:00.000"}, {"Lead_ID": "LD-00363", "Date": "2025-10-15T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-31T00:00:00.000"}, {"Lead_ID": "LD-00364", "Date": "2025-12-08T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-13T00:00:00.000"}, {"Lead_ID": "LD-00365", "Date": "2025-05-31T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-14T00:00:00.000"}, {"Lead_ID": "LD-00366", "Date": "2025-05-07T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-05-09T00:00:00.000"}, {"Lead_ID": "LD-00367", "Date": "2025-06-04T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-06-09T00:00:00.000"}, {"Lead_ID": "LD-00368", "Date": "2025-09-30T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-10-02T00:00:00.000"}, {"Lead_ID": "LD-00369", "Date": "2025-04-14T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-04-14T00:00:00.000"}, {"Lead_ID": "LD-00370", "Date": "2025-10-26T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 5753494.0, "Last_update": "2025-11-07T00:00:00.000"}, {"Lead_ID": "LD-00371", "Date": "2025-09-03T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-09-16T00:00:00.000"}, {"Lead_ID": "LD-00372", "Date": "2025-06-25T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-07-07T00:00:00.000"}, {"Lead_ID": "LD-00373", "Date": "2025-02-08T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 8704697.0, "Last_update": "2025-02-11T00:00:00.000"}, {"Lead_ID": "LD-00374", "Date": "2025-06-19T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-06-25T00:00:00.000"}, {"Lead_ID": "LD-00375", "Date": "2025-09-04T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-09-13T00:00:00.000"}, {"Lead_ID": "LD-00376", "Date": "2025-01-26T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-02-01T00:00:00.000"}, {"Lead_ID": "LD-00377", "Date": "2025-12-21T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00378", "Date": "2025-11-02T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-11-16T00:00:00.000"}, {"Lead_ID": "LD-00379", "Date": "2025-01-13T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-01-16T00:00:00.000"}, {"Lead_ID": "LD-00380", "Date": "2025-11-12T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-11-17T00:00:00.000"}, {"Lead_ID": "LD-00381", "Date": "2025-11-09T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 6000000, "Deal_amount": 9610146.0, "Last_update": "2025-11-28T00:00:00.000"}, {"Lead_ID": "LD-00382", "Date": "2025-02-05T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-02-09T00:00:00.000"}, {"Lead_ID": "LD-00383", "Date": "2025-06-22T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-07-11T00:00:00.000"}, {"Lead_ID": "LD-00384", "Date": "2025-01-20T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-01-31T00:00:00.000"}, {"Lead_ID": "LD-00385", "Date": "2025-11-17T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-11-17T00:00:00.000"}, {"Lead_ID": "LD-00386", "Date": "2025-09-21T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-09-28T00:00:00.000"}, {"Lead_ID": "LD-00387", "Date": "2025-05-22T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-05-22T00:00:00.000"}, {"Lead_ID": "LD-00388", "Date": "2025-05-23T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-05-27T00:00:00.000"}, {"Lead_ID": "LD-00389", "Date": "2025-04-02T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-04-07T00:00:00.000"}, {"Lead_ID": "LD-00390", "Date": "2025-12-20T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-22T00:00:00.000"}, {"Lead_ID": "LD-00391", "Date": "2025-11-18T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-02T00:00:00.000"}, {"Lead_ID": "LD-00392", "Date": "2025-10-15T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 11601457.0, "Last_update": "2025-10-19T00:00:00.000"}, {"Lead_ID": "LD-00393", "Date": "2025-08-03T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-08-16T00:00:00.000"}, {"Lead_ID": "LD-00394", "Date": "2025-12-08T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-25T00:00:00.000"}, {"Lead_ID": "LD-00395", "Date": "2025-02-20T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-07T00:00:00.000"}, {"Lead_ID": "LD-00396", "Date": "2025-06-02T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-07T00:00:00.000"}, {"Lead_ID": "LD-00397", "Date": "2025-07-05T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-18T00:00:00.000"}, {"Lead_ID": "LD-00398", "Date": "2025-03-04T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-03-11T00:00:00.000"}, {"Lead_ID": "LD-00399", "Date": "2025-07-09T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 5191387.0, "Last_update": "2025-07-15T00:00:00.000"}, {"Lead_ID": "LD-00400", "Date": "2025-05-05T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-05-12T00:00:00.000"}, {"Lead_ID": "LD-00401", "Date": "2025-05-30T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-11T00:00:00.000"}, {"Lead_ID": "LD-00402", "Date": "2025-11-10T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-11-15T00:00:00.000"}, {"Lead_ID": "LD-00403", "Date": "2025-02-27T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-03-16T00:00:00.000"}, {"Lead_ID": "LD-00404", "Date": "2025-12-08T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-09T00:00:00.000"}, {"Lead_ID": "LD-00405", "Date": "2025-11-01T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-11-08T00:00:00.000"}, {"Lead_ID": "LD-00406", "Date": "2025-06-29T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-07-09T00:00:00.000"}, {"Lead_ID": "LD-00407", "Date": "2025-06-19T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-19T00:00:00.000"}, {"Lead_ID": "LD-00408", "Date": "2025-11-22T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-11-27T00:00:00.000"}, {"Lead_ID": "LD-00409", "Date": "2025-09-28T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-10-13T00:00:00.000"}, {"Lead_ID": "LD-00410", "Date": "2025-02-23T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-03-14T00:00:00.000"}, {"Lead_ID": "LD-00411", "Date": "2025-04-11T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 5147745.0, "Last_update": "2025-04-22T00:00:00.000"}, {"Lead_ID": "LD-00412", "Date": "2025-09-21T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-10-01T00:00:00.000"}, {"Lead_ID": "LD-00413", "Date": "2025-02-22T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-03-03T00:00:00.000"}, {"Lead_ID": "LD-00414", "Date": "2025-03-01T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-03-03T00:00:00.000"}, {"Lead_ID": "LD-00415", "Date": "2025-04-18T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-04-30T00:00:00.000"}, {"Lead_ID": "LD-00416", "Date": "2025-01-05T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-01-07T00:00:00.000"}, {"Lead_ID": "LD-00417", "Date": "2025-04-13T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-04-27T00:00:00.000"}, {"Lead_ID": "LD-00418", "Date": "2025-07-15T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-07-30T00:00:00.000"}, {"Lead_ID": "LD-00419", "Date": "2025-09-19T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-01T00:00:00.000"}, {"Lead_ID": "LD-00420", "Date": "2025-12-31T00:00:00.000", "Project": "Речной квартал", "Source": "Не указан", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00421", "Date": "2025-12-16T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-12-18T00:00:00.000"}, {"Lead_ID": "LD-00422", "Date": "2025-02-16T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-07T00:00:00.000"}, {"Lead_ID": "LD-00423", "Date": "2025-12-21T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00424", "Date": "2025-11-07T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 6000000, "Deal_amount": 6947238.0, "Last_update": "2025-11-25T00:00:00.000"}, {"Lead_ID": "LD-00425", "Date": "2025-11-04T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-11-14T00:00:00.000"}, {"Lead_ID": "LD-00426", "Date": "2025-05-24T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-08T00:00:00.000"}, {"Lead_ID": "LD-00427", "Date": "2025-09-26T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-09-28T00:00:00.000"}, {"Lead_ID": "LD-00428", "Date": "2025-05-04T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-05-09T00:00:00.000"}, {"Lead_ID": "LD-00429", "Date": "2025-04-16T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-29T00:00:00.000"}, {"Lead_ID": "LD-00430", "Date": "2025-06-07T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-06-24T00:00:00.000"}, {"Lead_ID": "LD-00431", "Date": "2025-05-27T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-06-12T00:00:00.000"}, {"Lead_ID": "LD-00432", "Date": "2025-05-25T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-05-28T00:00:00.000"}, {"Lead_ID": "LD-00433", "Date": "2025-04-30T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-14T00:00:00.000"}, {"Lead_ID": "LD-00434", "Date": "2025-11-15T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-11-25T00:00:00.000"}, {"Lead_ID": "LD-00435", "Date": "2025-10-02T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 6000000, "Deal_amount": 8239254.0, "Last_update": "2025-10-04T00:00:00.000"}, {"Lead_ID": "LD-00436", "Date": "2025-04-02T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-04T00:00:00.000"}, {"Lead_ID": "LD-00437", "Date": "2025-02-27T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 7500000, "Deal_amount": 11483485.0, "Last_update": "2025-03-14T00:00:00.000"}, {"Lead_ID": "LD-00438", "Date": "2025-12-12T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-16T00:00:00.000"}, {"Lead_ID": "LD-00439", "Date": "2025-08-17T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-08-26T00:00:00.000"}, {"Lead_ID": "LD-00440", "Date": "2025-04-27T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-05-15T00:00:00.000"}, {"Lead_ID": "LD-00441", "Date": "2025-11-14T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-11-17T00:00:00.000"}, {"Lead_ID": "LD-00442", "Date": "2025-10-06T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 6000000, "Deal_amount": 13191922.0, "Last_update": "2025-10-24T00:00:00.000"}, {"Lead_ID": "LD-00443", "Date": "2025-05-07T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-05-17T00:00:00.000"}, {"Lead_ID": "LD-00444", "Date": "2025-05-09T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 6531064.0, "Last_update": "2025-05-10T00:00:00.000"}, {"Lead_ID": "LD-00445", "Date": "2025-02-27T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-08T00:00:00.000"}, {"Lead_ID": "LD-00446", "Date": "2025-05-02T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-12T00:00:00.000"}, {"Lead_ID": "LD-00447", "Date": "2025-01-01T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-01-20T00:00:00.000"}, {"Lead_ID": "LD-00448", "Date": "2025-08-27T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-09-11T00:00:00.000"}, {"Lead_ID": "LD-00449", "Date": "2025-10-17T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-11-04T00:00:00.000"}, {"Lead_ID": "LD-00450", "Date": "2025-04-06T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-04-16T00:00:00.000"}, {"Lead_ID": "LD-00451", "Date": "2025-05-06T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-05-19T00:00:00.000"}, {"Lead_ID": "LD-00452", "Date": "2025-04-28T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-04-29T00:00:00.000"}, {"Lead_ID": "LD-00453", "Date": "2025-02-17T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-02-21T00:00:00.000"}, {"Lead_ID": "LD-00454", "Date": "2025-03-30T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-04-03T00:00:00.000"}, {"Lead_ID": "LD-00455", "Date": "2025-08-25T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-09-12T00:00:00.000"}, {"Lead_ID": "LD-00456", "Date": "2025-09-29T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-10-10T00:00:00.000"}, {"Lead_ID": "LD-00457", "Date": "2025-07-08T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-07-25T00:00:00.000"}, {"Lead_ID": "LD-00458", "Date": "2025-07-11T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-14T00:00:00.000"}, {"Lead_ID": "LD-00459", "Date": "2025-03-10T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 6000000, "Deal_amount": 13466685.0, "Last_update": "2025-03-26T00:00:00.000"}, {"Lead_ID": "LD-00460", "Date": "2025-10-05T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-10-14T00:00:00.000"}, {"Lead_ID": "LD-00461", "Date": "2025-12-15T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00462", "Date": "2025-09-04T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 9000000, "Deal_amount": 9445818.0, "Last_update": "2025-09-09T00:00:00.000"}, {"Lead_ID": "LD-00463", "Date": "2025-03-17T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-03-30T00:00:00.000"}, {"Lead_ID": "LD-00464", "Date": "2025-06-03T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-13T00:00:00.000"}, {"Lead_ID": "LD-00465", "Date": "2025-05-24T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-03T00:00:00.000"}, {"Lead_ID": "LD-00466", "Date": "2025-03-27T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-04-13T00:00:00.000"}, {"Lead_ID": "LD-00467", "Date": "2025-07-04T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-07-21T00:00:00.000"}, {"Lead_ID": "LD-00468", "Date": "2025-10-12T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-22T00:00:00.000"}, {"Lead_ID": "LD-00469", "Date": "2025-08-08T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-08-19T00:00:00.000"}, {"Lead_ID": "LD-00470", "Date": "2025-03-10T00:00:00.000", "Project": "Северный парк", "Source": "Не указан", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-03-14T00:00:00.000"}, {"Lead_ID": "LD-00471", "Date": "2025-02-16T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 7182926.0, "Last_update": "2025-02-24T00:00:00.000"}, {"Lead_ID": "LD-00472", "Date": "2025-04-04T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-04-12T00:00:00.000"}, {"Lead_ID": "LD-00473", "Date": "2025-08-26T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-04T00:00:00.000"}, {"Lead_ID": "LD-00474", "Date": "2025-07-23T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-08-10T00:00:00.000"}, {"Lead_ID": "LD-00475", "Date": "2025-08-06T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-08-06T00:00:00.000"}, {"Lead_ID": "LD-00476", "Date": "2025-12-07T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-13T00:00:00.000"}, {"Lead_ID": "LD-00477", "Date": "2025-02-08T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-11T00:00:00.000"}, {"Lead_ID": "LD-00478", "Date": "2025-04-10T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 9784808.0, "Last_update": "2025-04-10T00:00:00.000"}, {"Lead_ID": "LD-00479", "Date": "2025-10-16T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 11637640.0, "Last_update": "2025-10-30T00:00:00.000"}, {"Lead_ID": "LD-00480", "Date": "2025-09-11T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-09-18T00:00:00.000"}, {"Lead_ID": "LD-00481", "Date": "2025-08-10T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 9654419.0, "Last_update": "2025-08-21T00:00:00.000"}, {"Lead_ID": "LD-00482", "Date": "2025-12-23T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00483", "Date": "2025-01-23T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-02-06T00:00:00.000"}, {"Lead_ID": "LD-00484", "Date": "2025-09-07T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-09-23T00:00:00.000"}, {"Lead_ID": "LD-00485", "Date": "2025-01-10T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-01-23T00:00:00.000"}, {"Lead_ID": "LD-00486", "Date": "2025-09-03T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-09-16T00:00:00.000"}, {"Lead_ID": "LD-00487", "Date": "2025-11-21T00:00:00.000", "Project": "Новая жизнь", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-08T00:00:00.000"}, {"Lead_ID": "LD-00488", "Date": "2025-04-10T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-04-29T00:00:00.000"}, {"Lead_ID": "LD-00489", "Date": "2025-10-17T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-11-03T00:00:00.000"}, {"Lead_ID": "LD-00490", "Date": "2025-06-29T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-07-14T00:00:00.000"}, {"Lead_ID": "LD-00491", "Date": "2025-08-11T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-08-11T00:00:00.000"}, {"Lead_ID": "LD-00492", "Date": "2025-09-07T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-09-17T00:00:00.000"}, {"Lead_ID": "LD-00493", "Date": "2025-05-27T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-10T00:00:00.000"}, {"Lead_ID": "LD-00494", "Date": "2025-04-06T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Бронь", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-04-17T00:00:00.000"}, {"Lead_ID": "LD-00495", "Date": "2025-09-14T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-09-21T00:00:00.000"}, {"Lead_ID": "LD-00496", "Date": "2025-11-21T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-10T00:00:00.000"}, {"Lead_ID": "LD-00497", "Date": "2025-01-04T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-01-09T00:00:00.000"}, {"Lead_ID": "LD-00498", "Date": "2025-01-16T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-01-18T00:00:00.000"}, {"Lead_ID": "LD-00499", "Date": "2025-10-07T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-10-19T00:00:00.000"}, {"Lead_ID": "LD-00500", "Date": "2025-12-02T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-12-14T00:00:00.000"}, {"Lead_ID": "LD-00501", "Date": "2025-09-04T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-09-05T00:00:00.000"}, {"Lead_ID": "LD-00502", "Date": "2025-09-15T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-09-19T00:00:00.000"}, {"Lead_ID": "LD-00503", "Date": "2025-06-09T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-06-25T00:00:00.000"}, {"Lead_ID": "LD-00504", "Date": "2025-12-06T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-12-11T00:00:00.000"}, {"Lead_ID": "LD-00505", "Date": "2025-06-01T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-06-02T00:00:00.000"}, {"Lead_ID": "LD-00506", "Date": "2025-06-27T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-06-30T00:00:00.000"}, {"Lead_ID": "LD-00507", "Date": "2025-06-12T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Бронь", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-06-22T00:00:00.000"}, {"Lead_ID": "LD-00508", "Date": "2025-02-02T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-09T00:00:00.000"}, {"Lead_ID": "LD-00509", "Date": "2025-06-28T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-07-09T00:00:00.000"}, {"Lead_ID": "LD-00510", "Date": "2025-04-11T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-18T00:00:00.000"}, {"Lead_ID": "LD-00511", "Date": "2025-09-25T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-10-05T00:00:00.000"}, {"Lead_ID": "LD-00512", "Date": "2025-11-19T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-08T00:00:00.000"}, {"Lead_ID": "LD-00513", "Date": "2025-03-06T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-03-13T00:00:00.000"}, {"Lead_ID": "LD-00514", "Date": "2025-06-17T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-24T00:00:00.000"}, {"Lead_ID": "LD-00515", "Date": "2025-11-26T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-12-12T00:00:00.000"}, {"Lead_ID": "LD-00516", "Date": "2025-02-12T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-03-03T00:00:00.000"}, {"Lead_ID": "LD-00517", "Date": "2025-02-13T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-03-04T00:00:00.000"}, {"Lead_ID": "LD-00518", "Date": "2025-10-12T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-10-27T00:00:00.000"}, {"Lead_ID": "LD-00519", "Date": "2025-01-12T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-01-25T00:00:00.000"}, {"Lead_ID": "LD-00520", "Date": "2025-04-05T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-04-15T00:00:00.000"}, {"Lead_ID": "LD-00521", "Date": "2025-10-29T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-11-04T00:00:00.000"}, {"Lead_ID": "LD-00522", "Date": "2025-09-10T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-09-25T00:00:00.000"}, {"Lead_ID": "LD-00523", "Date": "2025-08-30T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-09-11T00:00:00.000"}, {"Lead_ID": "LD-00524", "Date": "2025-02-04T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-02-18T00:00:00.000"}, {"Lead_ID": "LD-00525", "Date": "2025-08-03T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-08-18T00:00:00.000"}, {"Lead_ID": "LD-00526", "Date": "2025-12-03T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-12-11T00:00:00.000"}, {"Lead_ID": "LD-00527", "Date": "2025-03-31T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-02T00:00:00.000"}, {"Lead_ID": "LD-00528", "Date": "2025-09-21T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-10-09T00:00:00.000"}, {"Lead_ID": "LD-00529", "Date": "2025-04-03T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-04-22T00:00:00.000"}, {"Lead_ID": "LD-00530", "Date": "2025-03-31T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-04T00:00:00.000"}, {"Lead_ID": "LD-00531", "Date": "2025-04-25T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-05-04T00:00:00.000"}, {"Lead_ID": "LD-00532", "Date": "2025-04-15T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-05-01T00:00:00.000"}, {"Lead_ID": "LD-00533", "Date": "2025-07-15T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-07-29T00:00:00.000"}, {"Lead_ID": "LD-00534", "Date": "2025-11-10T00:00:00.000", "Project": "Городские сады", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-11-17T00:00:00.000"}, {"Lead_ID": "LD-00535", "Date": "2025-04-24T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-05-08T00:00:00.000"}, {"Lead_ID": "LD-00536", "Date": "2025-03-16T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-03-29T00:00:00.000"}, {"Lead_ID": "LD-00537", "Date": "2025-08-05T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-08-24T00:00:00.000"}, {"Lead_ID": "LD-00538", "Date": "2025-10-04T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-10-10T00:00:00.000"}, {"Lead_ID": "LD-00539", "Date": "2025-09-06T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-09-17T00:00:00.000"}, {"Lead_ID": "LD-00540", "Date": "2025-06-13T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 6881297.0, "Last_update": "2025-06-29T00:00:00.000"}, {"Lead_ID": "LD-00541", "Date": "2025-12-23T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00542", "Date": "2025-07-11T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-07-20T00:00:00.000"}, {"Lead_ID": "LD-00543", "Date": "2025-08-15T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-09-02T00:00:00.000"}, {"Lead_ID": "LD-00544", "Date": "2025-06-26T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 6135627.0, "Last_update": "2025-07-09T00:00:00.000"}, {"Lead_ID": "LD-00545", "Date": "2025-04-09T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-04-19T00:00:00.000"}, {"Lead_ID": "LD-00546", "Date": "2025-02-05T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-06T00:00:00.000"}, {"Lead_ID": "LD-00547", "Date": "2025-04-06T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-23T00:00:00.000"}, {"Lead_ID": "LD-00548", "Date": "2025-06-01T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-06-07T00:00:00.000"}, {"Lead_ID": "LD-00549", "Date": "2025-05-31T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-06-11T00:00:00.000"}, {"Lead_ID": "LD-00550", "Date": "2025-07-09T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-07-10T00:00:00.000"}, {"Lead_ID": "LD-00551", "Date": "2025-08-12T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-08-31T00:00:00.000"}, {"Lead_ID": "LD-00552", "Date": "2025-02-06T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-02-23T00:00:00.000"}, {"Lead_ID": "LD-00553", "Date": "2025-09-25T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-30T00:00:00.000"}, {"Lead_ID": "LD-00554", "Date": "2025-07-02T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 5154692.0, "Last_update": "2025-07-11T00:00:00.000"}, {"Lead_ID": "LD-00555", "Date": "2025-01-13T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-02-01T00:00:00.000"}, {"Lead_ID": "LD-00556", "Date": "2025-10-06T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-10-20T00:00:00.000"}, {"Lead_ID": "LD-00557", "Date": "2025-08-05T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-08-09T00:00:00.000"}, {"Lead_ID": "LD-00558", "Date": "2025-12-21T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-12-31T00:00:00.000"}, {"Lead_ID": "LD-00559", "Date": "2025-12-27T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-12-29T00:00:00.000"}, {"Lead_ID": "LD-00560", "Date": "2025-10-13T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-10-17T00:00:00.000"}, {"Lead_ID": "LD-00561", "Date": "2025-09-30T00:00:00.000", "Project": "Северный парк", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-10-07T00:00:00.000"}, {"Lead_ID": "LD-00562", "Date": "2025-03-03T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 12557845.0, "Last_update": "2025-03-10T00:00:00.000"}, {"Lead_ID": "LD-00563", "Date": "2025-03-25T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-01T00:00:00.000"}, {"Lead_ID": "LD-00564", "Date": "2025-08-05T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-08-16T00:00:00.000"}, {"Lead_ID": "LD-00565", "Date": "2025-12-08T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 6000000, "Deal_amount": 13152513.0, "Last_update": "2025-12-15T00:00:00.000"}, {"Lead_ID": "LD-00566", "Date": "2025-07-06T00:00:00.000", "Project": "Городские сады", "Source": "Не указан", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-07-16T00:00:00.000"}, {"Lead_ID": "LD-00567", "Date": "2025-01-19T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-02-01T00:00:00.000"}, {"Lead_ID": "LD-00568", "Date": "2025-06-26T00:00:00.000", "Project": "Новая жизнь", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-07-03T00:00:00.000"}, {"Lead_ID": "LD-00569", "Date": "2025-04-10T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-04-19T00:00:00.000"}, {"Lead_ID": "LD-00570", "Date": "2025-08-21T00:00:00.000", "Project": "Новая жизнь", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-08-27T00:00:00.000"}, {"Lead_ID": "LD-00571", "Date": "2025-03-17T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-02T00:00:00.000"}, {"Lead_ID": "LD-00572", "Date": "2025-09-22T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-25T00:00:00.000"}, {"Lead_ID": "LD-00573", "Date": "2025-10-11T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 9445975.0, "Last_update": "2025-10-23T00:00:00.000"}, {"Lead_ID": "LD-00574", "Date": "2025-07-25T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 5000000, "Deal_amount": 7871656.0, "Last_update": "2025-07-28T00:00:00.000"}, {"Lead_ID": "LD-00575", "Date": "2025-08-11T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 11000000, "Deal_amount": 9708569.0, "Last_update": "2025-08-15T00:00:00.000"}, {"Lead_ID": "LD-00576", "Date": "2025-02-21T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-02-24T00:00:00.000"}, {"Lead_ID": "LD-00577", "Date": "2025-12-05T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-12-22T00:00:00.000"}, {"Lead_ID": "LD-00578", "Date": "2025-05-24T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Отказ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-05-29T00:00:00.000"}, {"Lead_ID": "LD-00579", "Date": "2025-03-10T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "Бронь", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-03-11T00:00:00.000"}, {"Lead_ID": "LD-00580", "Date": "2025-04-09T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Новый", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-19T00:00:00.000"}, {"Lead_ID": "LD-00581", "Date": "2025-01-25T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Иванова Анна", "Status": "Новый", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-02-07T00:00:00.000"}, {"Lead_ID": "LD-00582", "Date": "2025-02-22T00:00:00.000", "Project": "Городские сады", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-02-26T00:00:00.000"}, {"Lead_ID": "LD-00583", "Date": "2025-05-31T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Кузнецов Алексей", "Status": "Отказ", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-06-05T00:00:00.000"}, {"Lead_ID": "LD-00584", "Date": "2025-05-24T00:00:00.000", "Project": "Новая жизнь", "Source": "Сайт", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-06-02T00:00:00.000"}, {"Lead_ID": "LD-00585", "Date": "2025-02-26T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-03-05T00:00:00.000"}, {"Lead_ID": "LD-00586", "Date": "2025-02-08T00:00:00.000", "Project": "Северный парк", "Source": "Сайт", "Manager": "Сидорова Мария", "Status": "Новый", "Budget": 13500000, "Deal_amount": null, "Last_update": "2025-02-21T00:00:00.000"}, {"Lead_ID": "LD-00587", "Date": "2025-04-19T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Сидорова Мария", "Status": "Показ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-04-21T00:00:00.000"}, {"Lead_ID": "LD-00588", "Date": "2025-06-30T00:00:00.000", "Project": "Речной квартал", "Source": "Сайт", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 13500000, "Deal_amount": 5743088.0, "Last_update": "2025-07-11T00:00:00.000"}, {"Lead_ID": "LD-00589", "Date": "2025-02-11T00:00:00.000", "Project": "Городские сады", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "В обработке", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-02-26T00:00:00.000"}, {"Lead_ID": "LD-00590", "Date": "2025-07-05T00:00:00.000", "Project": "Речной квартал", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Бронь", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-07-21T00:00:00.000"}, {"Lead_ID": "LD-00591", "Date": "2025-08-11T00:00:00.000", "Project": "Речной квартал", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 11000000, "Deal_amount": null, "Last_update": "2025-08-11T00:00:00.000"}, {"Lead_ID": "LD-00592", "Date": "2025-05-02T00:00:00.000", "Project": "Северный парк", "Source": "Яндекс.Директ", "Manager": "Петров Дмитрий", "Status": "Новый", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-05-11T00:00:00.000"}, {"Lead_ID": "LD-00593", "Date": "2025-05-13T00:00:00.000", "Project": "Речной квартал", "Source": "Рекомендация", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-05-22T00:00:00.000"}, {"Lead_ID": "LD-00594", "Date": "2025-06-12T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Иванова Анна", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-06-13T00:00:00.000"}, {"Lead_ID": "LD-00595", "Date": "2025-08-03T00:00:00.000", "Project": "Северный парк", "Source": "Соцсети", "Manager": "Сидорова Мария", "Status": "Сделка", "Budget": 13500000, "Deal_amount": 11913462.0, "Last_update": "2025-08-11T00:00:00.000"}, {"Lead_ID": "LD-00596", "Date": "2025-08-09T00:00:00.000", "Project": "Северный парк", "Source": "Агентство", "Manager": "Иванова Анна", "Status": "Показ", "Budget": 6000000, "Deal_amount": null, "Last_update": "2025-08-21T00:00:00.000"}, {"Lead_ID": "LD-00597", "Date": "2025-08-23T00:00:00.000", "Project": "Городские сады", "Source": "Агентство", "Manager": "Петров Дмитрий", "Status": "Показ", "Budget": 9000000, "Deal_amount": null, "Last_update": "2025-09-07T00:00:00.000"}, {"Lead_ID": "LD-00598", "Date": "2025-11-27T00:00:00.000", "Project": "Речной квартал", "Source": "Соцсети", "Manager": "Кузнецов Алексей", "Status": "Сделка", "Budget": 13500000, "Deal_amount": 13280083.0, "Last_update": "2025-12-14T00:00:00.000"}, {"Lead_ID": "LD-00599", "Date": "2025-05-26T00:00:00.000", "Project": "Городские сады", "Source": "Рекомендация", "Manager": "Кузнецов Алексей", "Status": "В обработке", "Budget": 5000000, "Deal_amount": null, "Last_update": "2025-06-13T00:00:00.000"}, {"Lead_ID": "LD-00600", "Date": "2025-08-27T00:00:00.000", "Project": "Новая жизнь", "Source": "Соцсети", "Manager": "Петров Дмитрий", "Status": "Отказ", "Budget": 7500000, "Deal_amount": null, "Last_update": "2025-09-07T00:00:00.000"}];
+
+const COLORS = {
+    teal: "#18a999",
+    navy: "#253b50",
+    blue: "#6d91c7",
+    orange: "#e69b52",
+    red: "#e26d6d",
+    gray: "#9aa5b1"
+};
+
+const pageSize = 20;
+let currentPage = 0;
+
+function uniqueValues(field) {
+    return [...new Set(rows.map(row => row[field]).filter(Boolean))]
+        .sort((a, b) => String(a).localeCompare(String(b), "ru"));
+}
+
+function fillMultiSelect(id, values) {
+    const select = document.getElementById(id);
+    select.innerHTML = values.map(value =>
+        `<option value="${escapeHtml(String(value))}">${escapeHtml(String(value))}</option>`
+    ).join("");
+}
+
+function selectedValues(id) {
+    return [...document.getElementById(id).selectedOptions]
+        .map(option => option.value);
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function getFilteredRows() {
+    const selectedProjects = selectedValues("projectFilter");
+    const selectedSources = selectedValues("sourceFilter");
+    const selectedManagers = selectedValues("managerFilter");
+    const selectedStatuses = selectedValues("statusFilter");
+
+    const from = document.getElementById("dateFrom").value;
+    const to = document.getElementById("dateTo").value;
+
+    return rows.filter(row => {
+        const date = String(row.Date).slice(0, 10);
+
+        return (
+            (selectedProjects.length === 0 || selectedProjects.includes(row.Project)) &&
+            (selectedSources.length === 0 || selectedSources.includes(row.Source)) &&
+            (selectedManagers.length === 0 || selectedManagers.includes(row.Manager)) &&
+            (selectedStatuses.length === 0 || selectedStatuses.includes(row.Status)) &&
+            (!from || date >= from) &&
+            (!to || date <= to)
+        );
+    });
+}
+
+function money(value) {
+    return new Intl.NumberFormat("ru-RU", {
+        maximumFractionDigits: 0
+    }).format(Number(value) || 0) + " ₽";
+}
+
+function chartLayout(title) {
+    return {
+        title: {text: title, x: 0.03, font: {size: 14, color: "#263445"}},
+        paper_bgcolor: "#ffffff",
+        plot_bgcolor: "#ffffff",
+        margin: {l: 45, r: 18, t: 42, b: 42},
+        font: {family: "Arial", color: "#536170", size: 11},
+        showlegend: false,
+        autosize: true
+    };
+}
+
+function renderKpis(filtered) {
+    const total = filtered.length;
+    const deals = filtered.filter(row => row.Status === "Сделка");
+    const conversion = total ? (deals.length / total) * 100 : 0;
+    const revenue = deals.reduce(
+        (sum, row) => sum + (Number(row.Deal_amount) || 0),
+        0
+    );
+    const avgBudget = total
+        ? filtered.reduce((sum, row) => sum + (Number(row.Budget) || 0), 0) / total
+        : 0;
+
+    const reportDate = new Date("2025-12-31");
+    const stale = filtered.filter(row => {
+        const updated = new Date(String(row.Last_update).slice(0, 10));
+        return (reportDate - updated) / 86400000 > 14;
+    }).length;
+
+    const cards = [
+        ["Обращения", total.toLocaleString("ru-RU"), COLORS.navy],
+        ["Сделки", deals.length.toLocaleString("ru-RU"), COLORS.teal],
+        ["Конверсия", conversion.toFixed(1) + "%", COLORS.blue],
+        ["Выручка", money(revenue), COLORS.navy],
+        ["Средний бюджет", money(avgBudget), COLORS.orange],
+        ["Просрочено обновлений", stale.toLocaleString("ru-RU"), COLORS.red]
+    ];
+
+    document.getElementById("kpis").innerHTML = cards.map(card => `
+        <div class="card kpi">
+            <div class="kpi-label">${card[0]}</div>
+            <div class="kpi-value" style="color:${card[2]}">${card[1]}</div>
+        </div>
+    `).join("");
+}
+
+function renderCharts(filtered) {
+    // Динамика по месяцам
+    const monthMap = {};
+
+    filtered.forEach(row => {
+        const month = String(row.Date).slice(0, 7);
+        if (!monthMap[month]) {
+            monthMap[month] = {leads: 0, deals: 0};
+        }
+        monthMap[month].leads += 1;
+        if (row.Status === "Сделка") {
+            monthMap[month].deals += 1;
+        }
+    });
+
+    const months = Object.keys(monthMap).sort();
+    const metricChoices = selectedValues("metricFilter");
+    const trendTraces = [];
+
+    if (metricChoices.includes("leads")) {
+        trendTraces.push({
+            x: months,
+            y: months.map(month => monthMap[month].leads),
+            type: "scatter",
+            mode: "lines+markers",
+            name: "Обращения",
+            line: {color: COLORS.navy, width: 3},
+            marker: {size: 6}
+        });
+    }
+
+    if (metricChoices.includes("deals")) {
+        trendTraces.push({
+            x: months,
+            y: months.map(month => monthMap[month].deals),
+            type: "scatter",
+            mode: "lines+markers",
+            name: "Сделки",
+            line: {color: COLORS.teal, width: 3},
+            marker: {size: 6}
+        });
+    }
+
+    const trendLayout = chartLayout("Динамика");
+    trendLayout.showlegend = true;
+    trendLayout.legend = {orientation: "h", y: 1.15};
+    trendLayout.xaxis = {showgrid: false, tickangle: -25};
+    trendLayout.yaxis = {gridcolor: "#edf0f3", title: "Количество"};
+
+    Plotly.react("trendChart", trendTraces, trendLayout, {
+        responsive: true,
+        displayModeBar: false
+    });
+
+    // Источники
+    const sourceCounts = {};
+    filtered.forEach(row => {
+        sourceCounts[row.Source] = (sourceCounts[row.Source] || 0) + 1;
+    });
+
+    Plotly.react("sourceChart", [{
+        labels: Object.keys(sourceCounts),
+        values: Object.values(sourceCounts),
+        type: "pie",
+        hole: 0.62,
+        textinfo: "label+percent",
+        textposition: "outside",
+        marker: {
+            colors: [COLORS.teal, COLORS.navy, COLORS.orange, COLORS.blue, COLORS.red, COLORS.gray]
+        }
+    }], {
+        ...chartLayout("Источники"),
+        margin: {l: 12, r: 12, t: 30, b: 20}
+    }, {
+        responsive: true,
+        displayModeBar: false
+    });
+
+    // Статусы
+    const statusCounts = {};
+    filtered.forEach(row => {
+        statusCounts[row.Status] = (statusCounts[row.Status] || 0) + 1;
+    });
+
+    const statusNames = Object.keys(statusCounts)
+        .sort((a, b) => statusCounts[a] - statusCounts[b]);
+
+    Plotly.react("statusChart", [{
+        x: statusNames.map(name => statusCounts[name]),
+        y: statusNames,
+        type: "bar",
+        orientation: "h",
+        marker: {color: COLORS.teal},
+        text: statusNames.map(name => statusCounts[name]),
+        textposition: "outside"
+    }], {
+        ...chartLayout("Статусы"),
+        margin: {l: 105, r: 30, t: 30, b: 25},
+        xaxis: {showgrid: true, gridcolor: "#edf0f3"},
+        yaxis: {showgrid: false}
+    }, {
+        responsive: true,
+        displayModeBar: false
+    });
+
+    // Конверсия менеджеров
+    const managerCounts = {};
+
+    filtered.forEach(row => {
+        if (!managerCounts[row.Manager]) {
+            managerCounts[row.Manager] = {leads: 0, deals: 0};
+        }
+        managerCounts[row.Manager].leads += 1;
+        if (row.Status === "Сделка") {
+            managerCounts[row.Manager].deals += 1;
+        }
+    });
+
+    const managerNames = Object.keys(managerCounts).sort((a, b) => {
+        const rateA = managerCounts[a].deals / managerCounts[a].leads;
+        const rateB = managerCounts[b].deals / managerCounts[b].leads;
+        return rateA - rateB;
+    });
+
+    Plotly.react("managerChart", [{
+        x: managerNames.map(name =>
+            managerCounts[name].leads
+                ? managerCounts[name].deals / managerCounts[name].leads * 100
+                : 0
+        ),
+        y: managerNames,
+        type: "bar",
+        orientation: "h",
+        marker: {color: COLORS.navy},
+        text: managerNames.map(name => {
+            const item = managerCounts[name];
+            return item.leads
+                ? (item.deals / item.leads * 100).toFixed(1) + "%"
+                : "0%";
+        }),
+        textposition: "outside"
+    }], {
+        ...chartLayout("Менеджеры"),
+        margin: {l: 120, r: 35, t: 30, b: 30},
+        xaxis: {title: "Конверсия, %", range: [0, 100], gridcolor: "#edf0f3"},
+        yaxis: {showgrid: false}
+    }, {
+        responsive: true,
+        displayModeBar: false
+    });
+
+    // Проекты
+    const projectCounts = {};
+    filtered.forEach(row => {
+        projectCounts[row.Project] = (projectCounts[row.Project] || 0) + 1;
+    });
+
+    const projectNames = Object.keys(projectCounts).sort(
+        (a, b) => projectCounts[a] - projectCounts[b]
+    );
+
+    Plotly.react("projectChart", [{
+        x: projectNames.map(name => projectCounts[name]),
+        y: projectNames,
+        type: "bar",
+        orientation: "h",
+        marker: {color: COLORS.orange},
+        text: projectNames.map(name => projectCounts[name]),
+        textposition: "outside"
+    }], {
+        ...chartLayout("Жилые комплексы"),
+        margin: {l: 130, r: 30, t: 30, b: 25},
+        xaxis: {showgrid: true, gridcolor: "#edf0f3"},
+        yaxis: {showgrid: false}
+    }, {
+        responsive: true,
+        displayModeBar: false
+    });
+}
+
+function renderTable(filtered) {
+    const body = document.getElementById("dataTable");
+    const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+    currentPage = Math.min(currentPage, pageCount - 1);
+    currentPage = Math.max(0, currentPage);
+
+    const startIndex = currentPage * pageSize;
+    const pageRows = filtered.slice(startIndex, startIndex + pageSize);
+
+    body.innerHTML = pageRows.map(row => {
+        const originalIndex = rows.indexOf(row);
+
+        return `
+        <tr>
+            <td>${escapeHtml(row.Lead_ID)}</td>
+            <td><input type="date" value="${String(row.Date).slice(0,10)}"
+                onchange="editCell(${originalIndex}, 'Date', this.value)"></td>
+            <td><input value="${escapeHtml(row.Source)}"
+                onchange="editCell(${originalIndex}, 'Source', this.value)"></td>
+            <td><input value="${escapeHtml(row.Project)}"
+                onchange="editCell(${originalIndex}, 'Project', this.value)"></td>
+            <td><input value="${escapeHtml(row.Manager)}"
+                onchange="editCell(${originalIndex}, 'Manager', this.value)"></td>
+            <td><input value="${escapeHtml(row.Status)}"
+                onchange="editCell(${originalIndex}, 'Status', this.value)"></td>
+            <td><input type="number" value="${Number(row.Budget) || 0}"
+                onchange="editCell(${originalIndex}, 'Budget', this.value)"></td>
+            <td><input type="number" value="${Number(row.Deal_amount) || 0}"
+                onchange="editCell(${originalIndex}, 'Deal_amount', this.value)"></td>
+            <td><input type="date" value="${String(row.Last_update).slice(0,10)}"
+                onchange="editCell(${originalIndex}, 'Last_update', this.value)"></td>
+        </tr>`;
+    }).join("");
+
+    document.getElementById("pageLabel").textContent =
+        `Страница ${currentPage + 1} из ${pageCount} · записей после фильтра: ${filtered.length}`;
+}
+
+function renderAll() {
+    const filtered = getFilteredRows();
+    renderKpis(filtered);
+    renderCharts(filtered);
+    renderTable(filtered);
+}
+
+function editCell(index, field, value) {
+    if (["Budget", "Deal_amount"].includes(field)) {
+        rows[index][field] = value === "" ? null : Number(value);
+    } else {
+        rows[index][field] = value;
+    }
+    renderAll();
+}
+
+function addRow() {
+    const nextId = "LD-" + String(rows.length + 1).padStart(5, "0");
+
+    rows.push({
+        Lead_ID: nextId,
+        Date: "2025-12-31T00:00:00.000Z",
+        Project: "Северный парк",
+        Source: "Сайт",
+        Manager: "Иванова Анна",
+        Status: "Новый",
+        Budget: 7500000,
+        Deal_amount: null,
+        Last_update: "2025-12-31T00:00:00.000Z"
+    });
+
+    currentPage = Math.floor((rows.length - 1) / pageSize);
+    renderAll();
+}
+
+function changePage(delta) {
+    currentPage += delta;
+    renderAll();
+}
+
+function resetFilters() {
+    [
+        "projectFilter",
+        "sourceFilter",
+        "managerFilter",
+        "statusFilter"
+    ].forEach(id => {
+        document.getElementById(id).selectedIndex = -1;
+    });
+
+    document.getElementById("dateFrom").value = "2025-01-01";
+    document.getElementById("dateTo").value = "2025-12-31";
+
+    const metrics = document.getElementById("metricFilter");
+    [...metrics.options].forEach(option => {
+        option.selected = ["leads", "deals"].includes(option.value);
+    });
+
+    currentPage = 0;
+    renderAll();
+}
+
+function downloadCsv() {
+    const headers = [
+        "Lead_ID", "Date", "Project", "Source", "Manager",
+        "Status", "Budget", "Deal_amount", "Last_update"
+    ];
+
+    const csvRows = [headers.join(",")];
+
+    rows.forEach(row => {
+        const values = headers.map(key => {
+            const value = row[key] ?? "";
+            return '"' + String(value).replaceAll('"', '""') + '"';
+        });
+        csvRows.push(values.join(","));
+    });
+
+    const blob = new Blob(
+        ["\uFEFF" + csvRows.join("\n")],
+        {type: "text/csv;charset=utf-8;"}
+    );
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "real_estate_leads_updated.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+// Инициализируем фильтры и обработчики
+fillMultiSelect(
+    "projectFilter",
+    [...new Set(rows.map(row => row.Project))].sort()
+);
+fillMultiSelect(
+    "sourceFilter",
+    [...new Set(rows.map(row => row.Source))].sort()
+);
+fillMultiSelect(
+    "managerFilter",
+    [...new Set(rows.map(row => row.Manager))].sort()
+);
+fillMultiSelect(
+    "statusFilter",
+    [...new Set(rows.map(row => row.Status))].sort()
+);
+
+[
+    "projectFilter",
+    "sourceFilter",
+    "managerFilter",
+    "statusFilter",
+    "metricFilter",
+    "dateFrom",
+    "dateTo"
+].forEach(id => {
+    document.getElementById(id).addEventListener("change", () => {
+        currentPage = 0;
+        renderAll();
+    });
+});
+
+renderAll();
+</script>
+</body>
+</html>
